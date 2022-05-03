@@ -1,0 +1,214 @@
+---
+- name: Set up the atacker's server
+  hosts: attacker
+  become: true
+  tasks:
+    - name: Copy the attacker script
+      copy:
+        src: attacker
+        dest: /home/vagrant/
+    - name: Copy the wordlists
+      copy:
+        src: wordlists
+        dest: /home/vagrant/
+    - name: Install pip
+      apt:
+        name: python3-pip
+        update_cache: yes
+        state: latest
+    - name: Upgrade pip
+      pip:
+        executable: pip3
+        name: pip
+        state: latest
+    - name: Install dependencies
+      pip:
+        executable: pip3
+        chdir: /home/vagrant/attacker
+        requirements: requirements.txt
+        state: latest
+    - name: Insert the response address into the script
+      lineinfile:
+        path: /home/vagrant/attacker/tdns/exfil.py
+        regexp: "^RESPONSE_ADDRESS ="
+        line: "RESPONSE_ADDRESS = '{{ response_address }}'"
+    - name: Stop the system resolver to free port 53
+      service:
+        name: systemd-resolved
+        state: stopped
+
+
+- name: Set up the dns server with IDS
+  hosts: dnsserver
+  become: true
+  tasks:
+    - name: Copy the ids script
+      copy:
+        src: ids
+        dest: /home/vagrant/
+    - name: Copy the wordlists
+      copy:
+        src: wordlists
+        dest: /home/vagrant/
+    - name: Install dnsmasq
+      apt:
+        name: dnsmasq
+        state: latest
+        update_cache: yes
+    - name: Acknowledge the attacker's domain
+      lineinfile:
+        path: /etc/dnsmasq.conf
+        line: "server=/.{{ attacker_tld }}/{{ attacker_ip }}"
+    - name: Acknowledge the StealthyVec's domains
+      lineinfile:
+        path: /etc/dnsmasq.conf
+        line: "server=/.{{ stealthyvec_tld }}/{{ attacker_ip }}"
+    - name: Deal with systemd-resolved
+      lineinfile:
+        path: /etc/dnsmasq.conf
+        line: "bind-interfaces"
+    - name: Restart dnsmasq service
+      service:
+        name: dnsmasq
+        state: restarted
+
+    - name: Install Python3-pip
+      apt:
+        name: python3-pip
+        state: latest
+    - name: Install pip
+      apt:
+        name: python3-pip
+        update_cache: yes
+        state: latest
+    - name: Upgrade pip
+      pip:
+        executable: pip3
+        name: pip
+        state: latest
+    - name: Install dependencies
+      pip:
+        executable: pip3
+        chdir: /home/vagrant/ids
+        requirements: requirements.txt
+        state: latest
+
+    - name: Install passivedns prerequisites
+      apt:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - make
+          - git-core
+          - binutils-dev
+          - libldns2
+          - libssl-dev
+          - libldns-dev
+          - libpcap-dev
+          - autoconf
+          - gcc
+    - name: Clone passivedns
+      git:
+        repo: https://github.com/gamelinux/passivedns.git
+        dest: /home/vagrant/passivedns
+    - name: Install passivedns
+      command: autoreconf --install
+      args:
+        chdir: /home/vagrant/passivedns
+    - name: Install passivedns
+      command: ./configure --disable-dependency-tracking
+      args:
+        chdir: /home/vagrant/passivedns
+    - name: Install passivedns
+      command: make
+      args:
+        chdir: /home/vagrant/passivedns
+    - name: Install passivedns
+      command: make install
+      args:
+        chdir: /home/vagrant/passivedns
+    - name: Launch passivedns
+      command: passivedns -f ScsQATtnLl -P 0 -C 600 -X 46CDNOLFIPRSTMndHsxory -D
+
+    - name: Add the OISF Suricata repo
+      apt_repository:
+        repo: ppa:oisf/suricata-stable
+        state: present
+        update_cache: true
+    - name: Install Suricata
+      apt:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+        - suricata
+        - jq
+    - name: Download ET Open ruleset
+      shell: suricata-update
+    - name: Upload Suricata config
+      copy:
+        src: suricata.yaml
+        dest: /etc/suricata/suricata.yaml
+        owner: root
+        group: root
+    - name: Restart Suricata
+      service:
+        name: suricata
+        state: restarted
+    
+    - name: Enable IPv4 forwarding
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "net.ipv4.ip_forward = 1"
+    - name: Reload sysctl
+      command: sysctl -p
+    - name: Set up NAT forwarding
+      command: iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+    - name: Set up NAT forwarding
+      command: iptables -A FORWARD -i eth1 -j ACCEPT
+    
+    - name: Deal with systemd-resolved :(
+      command: resolvectl dns eth0 10.0.2.2
+
+
+- name: Set up the target
+  hosts: target
+  become: true
+  tasks:
+    - name: Copy the target script
+      copy:
+        src: target
+        dest: /home/vagrant/
+    - name: Copy the wordlists
+      copy:
+        src: wordlists
+        dest: /home/vagrant/
+    - name: Install dependencies
+      pip:
+        chdir: /home/vagrant/target
+        requirements: requirements.txt
+        state: latest
+    - name: Enable DNS DefaultRoute on eth1 (the target's network)
+      command: resolvectl default-route eth1 true
+    - name: Disable DNS DefaultRoute on eth0 (Vagrant's connection)
+      command: resolvectl default-route eth0 false
+    - name: Set the DNS server
+      command: "resolvectl dns eth1 {{ dns_server_ip }}"
+    - name: Insert the attacker's IP into the script
+      lineinfile:
+        path: /home/vagrant/target/profiles.py
+        regexp: "^ATTACKER_SERVER ="
+        line: "ATTACKER_SERVER = '{{ attacker_ip }}'"
+    - name: Insert the attacker's domain into the script
+      lineinfile:
+        path: /home/vagrant/target/tdns/exfil.py
+        regexp: "^DOMAIN ="
+        line: "DOMAIN = '{{ attacker_domain }}.{{ attacker_tld }}'"
+    - name: Insert the record type into the script
+      lineinfile:
+        path: /home/vagrant/target/tdns/exfil.py
+        regexp: "^RECORD_TYPE ="
+        line: "RECORD_TYPE = '{{ record_type }}'"
+    - name: Add default route to dnsserver
+      command: "ip route add default via {{ dns_server_ip }}"
