@@ -7,6 +7,11 @@
       copy:
         src: attacker
         dest: /home/vagrant/
+    - name: Insert the response address into the script
+      lineinfile:
+        path: /home/vagrant/attacker/tdns/exfil.py
+        regexp: "^RESPONSE_ADDRESS ="
+        line: "RESPONSE_ADDRESS = '{{ response_address }}'"
     - name: Copy the wordlists
       copy:
         src: wordlists
@@ -27,11 +32,6 @@
         chdir: /home/vagrant/attacker
         requirements: requirements.txt
         state: latest
-    - name: Insert the response address into the script
-      lineinfile:
-        path: /home/vagrant/attacker/tdns/exfil.py
-        regexp: "^RESPONSE_ADDRESS ="
-        line: "RESPONSE_ADDRESS = '{{ response_address }}'"
     - name: Stop the system resolver to free port 53
       service:
         name: systemd-resolved

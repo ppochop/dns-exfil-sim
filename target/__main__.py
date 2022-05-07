@@ -1,5 +1,6 @@
+import asyncio
 from sys import argv
-from asyncio import run
+
 import profiles
 
 HELP = """
@@ -22,4 +23,4 @@ if profile not in dir(profiles):
 
 vec = profiles.__getattribute__(profile)()
 
-run(vec())
+asyncio.run(vec())

