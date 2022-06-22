@@ -20,7 +20,6 @@
       apt:
         name: python3-pip
         update_cache: yes
-        state: latest
     - name: Upgrade pip
       pip:
         executable: pip3
@@ -31,7 +30,6 @@
         executable: pip3
         chdir: /home/vagrant/attacker
         requirements: requirements.txt
-        state: latest
     - name: Stop the system resolver to free port 53
       service:
         name: systemd-resolved
@@ -75,12 +73,7 @@
     - name: Install Python3-pip
       apt:
         name: python3-pip
-        state: latest
-    - name: Install pip
-      apt:
-        name: python3-pip
         update_cache: yes
-        state: latest
     - name: Upgrade pip
       pip:
         executable: pip3
@@ -91,12 +84,10 @@
         executable: pip3
         chdir: /home/vagrant/ids
         requirements: requirements.txt
-        state: latest
 
     - name: Install passivedns prerequisites
       apt:
         name: "{{ packages }}"
-        state: latest
       vars:
         packages:
           - make
@@ -188,7 +179,6 @@
       pip:
         chdir: /home/vagrant/target
         requirements: requirements.txt
-        state: latest
     - name: Enable DNS DefaultRoute on eth1 (the target's network)
       command: resolvectl default-route eth1 true
     - name: Disable DNS DefaultRoute on eth0 (Vagrant's connection)
