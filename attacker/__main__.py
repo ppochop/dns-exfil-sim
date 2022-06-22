@@ -4,9 +4,9 @@ import profiles
 
 HELP = """
 USAGE:
-    python server <profile>
+    python attacker <profile>
 
-    Check server/profiles.py for available profiles. Add more if needed.
+    Check attacker/profiles.py for available profiles. Add more if needed.
 """
 
 
