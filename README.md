@@ -15,6 +15,7 @@ Feel free to use the `target` and `attacker` scripts on their own or using the p
 1. You need `Vagrant` + `VirtualBox` + `Ansible`.
 2. `Vagrantfile` contains several configurable options (with default values) needed to set up the environment and the scripts.
 3. Run `vagrant up` and wait.
+   - If you get an error about IP addresses not within allowed ranges, you can create a file `/etc/vbox/networks.conf` with the content of `* 0.0.0.0/0 ::/0` to allow all ranges.[source](https://www.virtualbox.org/manual/ch06.html#network_hostonly)
 4. SSH into all three machines. (`vagrant ssh attacker`, `vagrant ssh target`, `vagrant ssh dnsserver`)
 5. If you want to use the detection script:
    1. `cd ids`
