@@ -1,5 +1,5 @@
 # DNS exfiltration simulator
-This repo is a part of my bachelor's thesis focused on data exfiltration using the DNS protocol. The thesis is not published yet.
+This repo is a part of my bachelor's thesis focused on data exfiltration using the DNS protocol. [Link to the thesis](https://is.muni.cz/th/vdfik/?lang=en;kod=C0011)
 
 The simulation revolves around `target` generating data and sending them to the `attacker` using one of the implemented, parametrized exfiltration vectors.
 
